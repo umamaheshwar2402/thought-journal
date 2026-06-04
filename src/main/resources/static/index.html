@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aesthetic Thoughts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#F9F6F0] min-h-screen text-stone-800 p-8 font-sans">
+
+    <div class="max-w-2xl mx-auto">
+        <header class="text-center mb-12">
+            <h1 class="text-3xl font-light tracking-wide text-stone-600">mindspace.</h1>
+            <p class="text-sm text-stone-400 mt-2">capture fleeting moments</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 mb-8">
+            <textarea id="content" placeholder="What's on your mind?" class="w-full h-24 p-2 border-none focus:ring-0 resize-none placeholder-stone-300 text-stone-700 outline-none"></textarea>
+            
+            <div class="flex justify-between items-center mt-4 pt-4 border-t border-stone-50">
+                <div class="flex gap-2">
+                    <button onclick="setColor('#FDE2E4')" class="w-6 h-6 rounded-full bg-[#FDE2E4] border-2 border-stone-200"></button>
+                    <button onclick="setColor('#E2ECE9')" class="w-6 h-6 rounded-full bg-[#E2ECE9] border-none"></button>
+                    <button onclick="setColor('#E8E8E4')" class="w-6 h-6 rounded-full bg-[#E8E8E4] border-none"></button>
+                    <button onclick="setColor('#EDDCD2')" class="w-6 h-6 rounded-full bg-[#EDDCD2] border-none"></button>
+                </div>
+                <button onclick="submitThought()" class="bg-stone-700 text-white text-xs px-5 py-2 rounded-full tracking-wider hover:bg-stone-600 transition">Save</button>
+            </div>
+        </div>
+
+        <div id="feed" class="grid grid-cols-1 gap-4"></div>
+    </div>
+
+    <script>
+        let selectedColor = '#FDE2E4';
+        
+        function setColor(color) {
+            selectedColor = color;
+            // Optional: add visual indicator to selected color dot
+        }
+
+        async function fetchThoughts() {
+            const res = await fetch('/api/thoughts');
+            const thoughts = await res.json();
+            const feed = document.getElementById('feed');
+            feed.innerHTML = '';
+            
+            thoughts.forEach(t => {
+                const card = document.createElement('div');
+                card.style.backgroundColor = t.moodColor || '#ffffff';
+                card.className = "p-6 rounded-2xl shadow-sm border border-stone-100/50 transition transform hover:-translate-y-0.5 duration-300";
+                card.innerHTML = `
+                    <p class="text-stone-700 text-sm leading-relaxed">${t.content}</p>
+                    <span class="text-[10px] text-stone-400 block mt-4 font-mono">${new Date(t.createdAt).toLocaleDateString()}</span>
+                `;
+                feed.appendChild(card);
+            });
+        }
+
+        async function submitThought() {
+            const content = document.getElementById('content').value;
+            if(!content.trim()) return;
+
+            await fetch('/api/thoughts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, moodColor: selectedColor })
+            });
+
+            document.getElementById('content').value = '';
+            fetchThoughts();
+        }
+
+        function setColor(color, event) {
+            selectedColor = color;
+            document.querySelectorAll('.flex gap-2 button').forEach(b => b.style.borderColor = 'transparent');
+            if(event) event.target.style.borderColor = '#78716c';
+        }
+
+        fetchThoughts();
+    </script>
+</body>
+</html>
